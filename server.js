@@ -2,11 +2,18 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
+const moment = require('moment');
 const app = express();
 
 app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static('public'));
+
+const dateOptions = {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+};
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname + '/index.html'));
@@ -14,21 +21,21 @@ app.get('/', (req, res) => {
 
 // if there isnt a date, return the current time
 app.get('/api/timestamp', (req, res) => {
-  const dateValue = new Date();
-  res.json({ unix: dateValue, natural: dateValue });
+  const dateValue = moment().format('ddd Do MMM YYYY');
+  const unixDate = moment().unix();
+
+  res.json({ unix: unixDate, utc: dateValue });
 });
 
 app.get('/api/timestamp/:dateValue', (req, res) => {
-  // check if dateValue is valid... if new Date(dateValue) is successful
-
-  // unix date must be an integer in milliseconds (not string)
-
   let { dateValue } = req.params;
-  dateValue = new Date(dateValue);
-  const dateInt = parseInt(dateValue);
 
-  // dateNatural = new Date(dateValue);
-  res.json({ unix: dateInt.getTime(), utc: dateValue.toUTCString() });
+  if (moment(dateValue, 'YYYY-MM-DD').isValid()) {
+    const unixDate = moment(dateValue, 'YYYY-MM-DD').unix();
+    dateValue = moment(dateValue, 'YYYY-MM-DD').format('ddd Do MMM YYYY');
+    res.json({ unix: unixDate, utc: dateValue });
+  }
+  res.json({ error: 'Invalid Date' });
 });
 
 app.listen(3000, () => {
